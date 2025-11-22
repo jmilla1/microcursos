@@ -28,10 +28,10 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
-  path: "/cursos/:id/modulos/:moduloId",
-  name: "curso-modulo",
-  component: CursoModuloView, 
-  meta: { requiresAuth: true },
+    path: "/cursos/:id/modulos/:moduloId",
+    name: "curso-modulo",
+    component: CursoModuloView, 
+    meta: { requiresAuth: true },
   },
   {
     path: "/mis-cursos",
