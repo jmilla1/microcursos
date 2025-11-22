@@ -56,28 +56,38 @@ import { useAuth } from "../composables/useAuth";
 
 const router = useRouter();
 const route = useRoute();
-const { login } = useAuth(); 
+const { login } = useAuth();
 
-const email = ref("");
-const password = ref("");
+const email = ref("admin@demo.cl");
+const password = ref("Admin123");
+
 const loading = ref(false);
 const error = ref("");
 
 const handleSubmit = async () => {
   loading.value = true;
   error.value = "";
+
   try {
-    
     await login(email.value, password.value);
 
+    
+    const redirectRaw = route.query.redirect;
+    const redirectName =
+      typeof redirectRaw === "string" && redirectRaw.length > 0
+        ? redirectRaw
+        : "catalogo";
 
-    const redirectName = route.query.redirect || "catalogo";
     await router.push({ name: redirectName });
   } catch (e) {
     console.error(e);
-    error.value = "Credenciales inválidas o error de servidor.";
+    
+    error.value =
+      e?.response?.data?.message ||
+      "Credenciales inválidas o error de servidor.";
   } finally {
     loading.value = false;
   }
 };
 </script>
+
