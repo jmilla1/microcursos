@@ -10,11 +10,12 @@ import ProgresoView from "../views/ProgresoView.vue";
 import ForoView from "../views/ForoView.vue";
 import AdminView from "../views/AdminView.vue";
 import { useAuth } from "../composables/useAuth";
+import RegisterView from "../views/RegisterView.vue";
 
 const routes = [
   { path: "/", name: "home", component: HomeView },
   { path: "/login", name: "login", component: LoginView },
-
+  { path: "/register", name: "register", component: RegisterView },
   {
     path: "/catalogo",
     name: "catalogo",
@@ -30,7 +31,7 @@ const routes = [
   {
     path: "/cursos/:id/modulos/:moduloId",
     name: "curso-modulo",
-    component: CursoModuloView, 
+    component: CursoModuloView,
     meta: { requiresAuth: true },
   },
   {
@@ -82,7 +83,7 @@ router.beforeEach((to, from, next) => {
   }
 
   // 3) Rutas que requieren ADMIN
-    if (requiereAdmin && !isAdmin.value) {
+  if (requiereAdmin && !isAdmin.value) {
     return next({ name: "home" });
   }
 
