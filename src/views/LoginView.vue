@@ -41,6 +41,11 @@
           {{ loading ? "Ingresando..." : "Ingresar" }}
         </button>
 
+<div class="text-center text-sm mt-4">
+  ¿No tienes cuenta? 
+  <router-link to="/register" class="text-blue-600 hover:underline">Regístrate aquí</router-link>
+</div>
+
         <p v-if="error" class="text-red-600 text-sm mt-2">
           {{ error }}
         </p>
