@@ -92,25 +92,41 @@
           <li
             v-for="modulo in curso.modulos"
             :key="modulo.id"
-            class="border rounded p-3 flex items-start gap-3"
+            class="border rounded p-3 flex items-center justify-between gap-3 bg-slate-50"
           >
-            <label class="flex items-start gap-2 w-full cursor-pointer">
-              <input
-                type="checkbox"
-                class="mt-1"
-                :checked="moduloEstaCompleto(modulo.id)"
-                :disabled="!estaInscrito || guardandoProgreso"
-                @change="() => toggleModulo(modulo.id)"
-              />
+            <div class="flex items-start gap-3">
+              <!-- Checkbox visual (deshabilitado para que sea solo lectura del estado) -->
+              <div class="mt-1">
+                <span v-if="moduloEstaCompleto(modulo.id)" class="text-emerald-600 text-lg">
+                  <i class="fa-solid fa-circle-check"></i> 
+                  
+                </span>
+                <span v-else class="text-slate-300 text-lg">
+                  
+                </span>
+              </div>
+              
               <div>
-                <strong class="block text-sm mb-1">
+                <strong class="block text-sm mb-1 text-slate-800">
                   {{ modulo.orden }}. {{ modulo.titulo }}
                 </strong>
-                <span class="text-xs text-slate-700">
+                <span class="text-xs text-slate-600">
                   {{ modulo.descripcion }}
                 </span>
               </div>
-            </label>
+            </div>
+
+            <!-- Botón de Acción: Iniciar / Repasar -->
+            <button
+              v-if="estaInscrito"
+              @click="irAlModulo(modulo)"
+              class="shrink-0 px-3 py-1.5 text-xs font-medium rounded-md transition-colors border"
+              :class="moduloEstaCompleto(modulo.id) 
+                ? 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50' 
+                : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'"
+            >
+              {{ moduloEstaCompleto(modulo.id) ? 'Repasar' : 'Iniciar' }}
+            </button>
           </li>
         </ul>
 
