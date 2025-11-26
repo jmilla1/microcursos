@@ -20,7 +20,9 @@
         </router-link>
 
         <div class="hidden md:flex items-center gap-4">
+          <!-- Botón Inicio: Se oculta si estamos en login o register -->
           <router-link
+            v-if="!isAuthPage"
             :to="{ name: 'home' }"
             :class="navLinkClass('home')"
           >
@@ -59,7 +61,7 @@
             Foro
           </router-link>
 
-          <!-- 👇 Solo para administradores -->
+          <!-- Solo para administradores -->
           <router-link
             v-if="isAdmin"
             :to="{ name: 'admin' }"
@@ -72,18 +74,18 @@
 
       <!-- Acciones -->
       <div class="flex items-center gap-2 text-sm">
-        <!-- Botón Iniciar sesión: solo cuando NO hay sesión y NO estamos en /login -->
+        <!-- Botón Iniciar sesión: solo cuando NO hay sesión y NO estamos en login/register -->
         <router-link
-          v-if="!isLoggedIn && !isLoginRoute"
+          v-if="!isLoggedIn && !isAuthPage"
           :to="{ name: 'login' }"
           class="px-3 py-1 rounded border border-slate-600 hover:border-slate-400 hover:text-white transition-colors"
         >
           Iniciar sesión
         </router-link>
 
-        <!-- Botón Salir: solo cuando hay sesión y NO estamos en /login -->
+        <!-- Botón Salir: solo cuando hay sesión -->
         <button
-          v-if="isLoggedIn && !isLoginRoute"
+          v-if="isLoggedIn"
           @click="handleLogout"
           class="px-3 py-1 rounded bg-red-500 hover:bg-red-600 text-white transition-colors"
         >
@@ -102,13 +104,12 @@ import { useAuth } from "../composables/useAuth";
 const route = useRoute();
 const router = useRouter();
 
-
 const { isAuthenticated, isAdmin, logout } = useAuth();
-
 
 const isLoggedIn = isAuthenticated;
 
-const isLoginRoute = computed(() => route.name === "login");
+// Propiedad computada para detectar si estamos en Login o Registro
+const isAuthPage = computed(() => ["login", "register"].includes(route.name));
 
 const isActive = (name) => route.name === name;
 
