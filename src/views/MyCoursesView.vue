@@ -1,4 +1,3 @@
-<!-- src/views/MyCoursesView.vue -->
 <template>
   <div class="py-8">
     <div class="max-w-5xl mx-auto space-y-6">
@@ -11,107 +10,99 @@
       </header>
 
       <!-- Estado general -->
-      <p v-if="loading" class="text-sm text-slate-600">Cargando tus cursos…</p>
-      <p v-else-if="!items.length" class="text-sm text-slate-600">
-        Aún no te has inscrito en ningún curso.
-      </p>
-      <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
+      <p v-if="loading" class="text-sm text-slate-600">Cargando tus cursos...</p>
+      
+      <p v-else-if="error" class="text-sm text-red-600">{{ error }}</p>
+      
+      <div v-else-if="!inscripciones.length" class="text-center py-12 bg-slate-50 rounded-lg border border-dashed">
+        <p class="text-slate-500 mb-2">Aún no te has inscrito en ningún curso.</p>
+        <router-link :to="{ name: 'catalogo' }" class="text-sm text-blue-600 hover:underline font-medium">
+          Ir al catálogo →
+        </router-link>
+      </div>
 
       <!-- Listado de cursos -->
-      <div v-for="item in items" :key="item.inscripcion.id" class="bg-white border rounded-lg shadow-sm p-4">
-        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          <!-- Info del curso -->
-          <div class="flex-1">
-            <h2 class="text-lg font-semibold">
-              {{ getCursoTitulo(item.inscripcion) }}
-            </h2>
-            <p class="text-sm text-slate-600 mb-2">
-              {{ getCursoDescripcion(item.inscripcion) }}
-            </p>
+      <div v-else class="space-y-6">
+        <div 
+          v-for="inscripcion in inscripciones" 
+          :key="inscripcion.id" 
+          class="bg-white border rounded-lg shadow-sm p-5"
+        >
+          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <!-- Info del curso -->
+            <div class="flex-1">
+              <h2 class="text-lg font-bold text-slate-900">
+                <!-- Usamos el nombre exacto del DTO -->
+                {{ inscripcion.tituloCurso || 'Curso sin título' }}
+              </h2>
+              <p class="text-sm text-slate-600 mb-3 mt-1">
+                {{ inscripcion.descripcionCurso || 'Sin descripción.' }}
+              </p>
 
-            <p class="text-xs text-slate-500 mb-1">
-              Estado: <span class="font-medium">{{ item.inscripcion.estado }}</span>
-              · Progreso: <span class="font-medium">{{ item.inscripcion.progreso }}%</span>
-            </p>
+              <div class="text-xs text-slate-500 mb-2 space-x-2">
+                <span class="px-2 py-0.5 rounded bg-slate-100 border">
+                  Estado: <span class="font-medium text-slate-700">{{ inscripcion.estado }}</span>
+                </span>
+                <span class="px-2 py-0.5 rounded bg-slate-100 border">
+                  Progreso: <span class="font-medium text-emerald-600">{{ inscripcion.progreso }}%</span>
+                </span>
+              </div>
 
-            <!-- Barra de progreso -->
-            <div class="w-full max-w-md h-2 rounded bg-slate-200 overflow-hidden mb-2">
-              <div
-                class="h-2 bg-emerald-500 transition-all"
-                :style="{ width: item.inscripcion.progreso + '%' }"
-              ></div>
+              <!-- Barra de progreso -->
+              <div class="w-full max-w-md h-2.5 rounded-full bg-slate-200 overflow-hidden mb-1">
+                <div
+                  class="h-full bg-emerald-500 transition-all duration-500 ease-out"
+                  :style="{ width: inscripcion.progreso + '%' }"
+                ></div>
+              </div>
             </div>
 
-            <p class="text-[11px] text-slate-500">
-              El progreso se calcula como módulos completados / módulos totales del curso.
-            </p>
+            <!-- Info lateral / Certificado -->
+            <div class="text-xs text-slate-500 md:text-right shrink-0 flex flex-col items-end gap-2">
+              <p>Inscripción: <span class="font-medium">{{ formatDate(inscripcion.fechaInscripcion) }}</span></p>
+              
+              <button 
+                v-if="inscripcion.progreso >= 100"
+                @click="descargarCertificado(inscripcion.cursoId)"
+                class="text-emerald-600 font-bold hover:text-emerald-700 flex items-center gap-1 bg-emerald-50 px-3 py-1.5 rounded-md border border-emerald-200 transition-colors"
+              >
+                <span>🎓</span> Descargar Certificado
+              </button>
+            </div>
           </div>
 
-          <!-- Info lateral opcional -->
-          <div class="text-xs text-slate-500 md:text-right">
-            <p>
-              Inscripción:
-              <span class="font-medium">
-                {{ formatDate(item.inscripcion.fechaInscripcion) }}
-              </span>
-            </p>
-            <p v-if="item.inscripcion.progreso >= 100" class="mt-1 font-semibold text-emerald-600">
-              Curso completado 🎓
-            </p>
-          </div>
-        </div>
+          <!-- Módulos del curso (Ya vienen dentro de la inscripcion) -->
+          <div class="mt-5 border-t pt-4">
+            <h3 class="text-sm font-semibold text-slate-800 mb-3">Contenido del curso</h3>
 
-        <!-- Módulos del curso -->
-        <div class="mt-4 border-t pt-3">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="text-sm font-semibold text-slate-800">
-              Módulos del curso
-            </h3>
-            <span v-if="item.loadingModulos" class="text-xs text-slate-500">
-              Cargando módulos…
-            </span>
-          </div>
+            <ul v-if="inscripcion.modulos && inscripcion.modulos.length" class="space-y-2">
+              <li
+                v-for="modulo in inscripcion.modulos"
+                :key="modulo.id"
+                class="flex items-center justify-between gap-3 border rounded-md px-4 py-3 bg-slate-50 hover:bg-white transition-colors"
+              >
+                <div>
+                  <p class="text-sm font-medium text-slate-900">
+                    {{ modulo.orden }}. {{ modulo.titulo }}
+                  </p>
+                  <p class="text-xs text-slate-600 line-clamp-1">
+                    {{ modulo.descripcion }}
+                  </p>
+                </div>
 
-          <p v-if="item.errorModulos" class="text-xs text-red-600 mb-2">
-            {{ item.errorModulos }}
-          </p>
-
-          <ul v-if="!item.loadingModulos && item.modulos.length" class="space-y-2">
-            <li
-              v-for="modulo in item.modulos"
-              :key="modulo.id"
-              class="flex items-start justify-between gap-3 border rounded-md px-3 py-2"
-            >
-              <div class="flex-1">
-                <p class="text-sm font-medium text-slate-900">
-                  {{ modulo.orden }}. {{ modulo.titulo }}
-                </p>
-                <p class="text-xs text-slate-600">
-                  {{ modulo.descripcion }}
-                </p>
-              </div>
-
-              <div class="flex items-center">
-                <button
-                  type="button"
-                  class="text-xs px-3 py-1.5 rounded-md border border-emerald-600 text-emerald-700 hover:bg-emerald-50 disabled:opacity-60 disabled:cursor-not-allowed"
-                  :disabled="completandoModuloId === modulo.id || item.inscripcion.progreso >= 100"
-                  @click="marcarModuloCompletado(getCursoId(item.inscripcion), modulo.id)"
+                <router-link
+                  :to="{ name: 'curso-modulo', params: { id: inscripcion.cursoId, moduloId: modulo.id }}"
+                  class="text-xs font-medium px-3 py-1.5 rounded border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 hover:border-blue-300 transition-colors shrink-0"
                 >
-                  <span v-if="completandoModuloId === modulo.id">Guardando…</span>
-                  <span v-else-if="item.inscripcion.progreso >= 100">Curso completo</span>
-                  <span v-else>Marcar como completado</span>
-                </button>
-              </div>
-            </li>
-          </ul>
+                  Ver Módulo
+                </router-link>
+              </li>
+            </ul>
 
-          <p
-            v-else-if="!item.loadingModulos && !item.modulos.length"
-            class="text-xs text-slate-500"
-          >
-            Este curso aún no tiene módulos registrados.
-          </p>
+            <p v-else class="text-xs text-slate-500 italic p-2">
+              No hay módulos disponibles.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -122,98 +113,54 @@
 import { ref, onMounted } from "vue";
 import api from "../api/client";
 
-// items: [{ inscripcion, modulos, loadingModulos, errorModulos }]
-const items = ref([]);
+const inscripciones = ref([]);
 const loading = ref(false);
 const error = ref("");
-const completandoModuloId = ref(null);
 
-// Helpers para compatibilizar con tu InscripcionDTO
-const getCursoId = (inscripcion) =>
-  inscripcion.cursoId ?? inscripcion.curso?.id;
-
-const getCursoTitulo = (inscripcion) =>
-  inscripcion.cursoTitulo ?? inscripcion.curso?.titulo ?? "Curso sin título";
-
-const getCursoDescripcion = (inscripcion) =>
-  inscripcion.cursoDescripcion ??
-  inscripcion.curso?.descripcion ??
-  "Sin descripción.";
-
+// Helpers de formato
 const formatDate = (iso) => {
   if (!iso) return "-";
   try {
-    return new Date(iso).toLocaleString();
+    return new Date(iso).toLocaleDateString("es-CL", {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
   } catch {
     return iso;
   }
 };
 
+// Carga de datos
 const cargarMisCursos = async () => {
   loading.value = true;
   error.value = "";
-  items.value = [];
-
+  
   try {
+    // El backend ahora envía todo listo en el DTO: tituloCurso, descripcionCurso y modulos.
+    // No necesitamos hacer llamadas extra por cada curso.
     const { data } = await api.get("/api/mis-cursos");
-
-    // Normalizamos a estructura local
-    const baseItems = data.map((ins) => ({
-      inscripcion: ins,
-      modulos: [],
-      loadingModulos: true,
-      errorModulos: "",
-    }));
-
-    items.value = baseItems;
-
-    // Cargar módulos de cada curso
-    await Promise.all(
-      baseItems.map(async (item) => {
-        const cursoId = getCursoId(item.inscripcion);
-        if (!cursoId) {
-          item.loadingModulos = false;
-          item.errorModulos = "No se pudo determinar el ID del curso.";
-          return;
-        }
-
-        try {
-          const { data: mods } = await api.get(`/api/cursos/${cursoId}/modulos`);
-          item.modulos = mods;
-        } catch (e) {
-          console.error(e);
-          item.errorModulos = "No se pudieron cargar los módulos del curso.";
-        } finally {
-          item.loadingModulos = false;
-        }
-      })
-    );
+    inscripciones.value = data;
   } catch (e) {
     console.error(e);
-    error.value =
-      "No se pudieron cargar tus cursos. Intenta nuevamente en unos minutos.";
+    error.value = "No se pudieron cargar tus cursos. Verifica tu conexión.";
   } finally {
     loading.value = false;
   }
 };
 
-const marcarModuloCompletado = async (cursoId, moduloId) => {
-  if (!cursoId || !moduloId) return;
-  error.value = "";
-  completandoModuloId.value = moduloId;
-
+const descargarCertificado = async (cursoId) => {
   try {
-    await api.post(
-      `/api/cursos/${cursoId}/modulos/${moduloId}/completado`
-    );
-    // Volvemos a cargar inscripciones y módulos para ver el progreso actualizado
-    await cargarMisCursos();
+    const response = await api.get(`/api/cursos/${cursoId}/certificado`, {
+      responseType: 'blob'
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `certificado_curso_${cursoId}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   } catch (e) {
-    console.error(e);
-    error.value =
-      "No se pudo actualizar el progreso del curso. Intenta nuevamente.";
-  } finally {
-    completandoModuloId.value = null;
+    alert("Error al generar el certificado. Asegúrate de haber completado el curso.");
   }
 };
 
