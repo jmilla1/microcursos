@@ -20,9 +20,9 @@
         </router-link>
 
         <div class="hidden md:flex items-center gap-4">
-          <!-- Botón Inicio: Se oculta si estamos en login o register -->
+          <!-- BOTÓN INICIO: Se oculta si estamos en login o register -->
           <router-link
-            v-if="!isAuthPage"
+            v-if="!shouldHideAuthElements"
             :to="{ name: 'home' }"
             :class="navLinkClass('home')"
           >
@@ -61,7 +61,7 @@
             Foro
           </router-link>
 
-          <!-- Solo para administradores -->
+          <!-- Admin -->
           <router-link
             v-if="isAdmin"
             :to="{ name: 'admin' }"
@@ -74,16 +74,16 @@
 
       <!-- Acciones -->
       <div class="flex items-center gap-2 text-sm">
-        <!-- Botón Iniciar sesión: solo cuando NO hay sesión y NO estamos en login/register -->
+        <!-- BOTÓN INICIAR SESIÓN: Se oculta si estamos logueados O si estamos en login/register -->
         <router-link
-          v-if="!isLoggedIn && !isAuthPage"
+          v-if="!isLoggedIn && !shouldHideAuthElements"
           :to="{ name: 'login' }"
           class="px-3 py-1 rounded border border-slate-600 hover:border-slate-400 hover:text-white transition-colors"
         >
           Iniciar sesión
         </router-link>
 
-        <!-- Botón Salir: solo cuando hay sesión -->
+        <!-- Botón Salir -->
         <button
           v-if="isLoggedIn"
           @click="handleLogout"
@@ -97,19 +97,34 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, watchEffect } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuth } from "../composables/useAuth";
 
 const route = useRoute();
 const router = useRouter();
-
 const { isAuthenticated, isAdmin, logout } = useAuth();
 
 const isLoggedIn = isAuthenticated;
 
-// Propiedad computada para detectar si estamos en Login o Registro
-const isAuthPage = computed(() => ["login", "register"].includes(route.name));
+// LÓGICA ROBUSTA: Revisa tanto el nombre como la ruta (path)
+const shouldHideAuthElements = computed(() => {
+  const currentName = route.name;
+  const currentPath = route.path;
+  
+  // Verifica si es login o register
+  return (
+    currentName === 'login' || 
+    currentName === 'register' || 
+    currentPath === '/login' || 
+    currentPath === '/register'
+  );
+});
+
+// Debugging: Mira la consola del navegador (F12) si sigue fallando
+watchEffect(() => {
+  console.log("Ruta actual:", route.path, "| Nombre:", route.name, "| Ocultar elementos:", shouldHideAuthElements.value);
+});
 
 const isActive = (name) => route.name === name;
 
