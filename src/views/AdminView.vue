@@ -214,7 +214,7 @@ const cerrarModalCurso = () => {
   cursoEdicion.value = null;
 };
 
-cconst guardarCurso = async () => {
+const guardarCurso = async () => {
   try {
     // 1. Preparamos un objeto limpio solo con lo editable
     const payload = {
