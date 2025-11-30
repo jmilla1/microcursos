@@ -214,26 +214,28 @@ const cerrarModalCurso = () => {
   cursoEdicion.value = null;
 };
 
-const guardarCurso = async () => {
+cconst guardarCurso = async () => {
   try {
-    // Creamos un objeto limpio solo con lo necesario
+    // 1. Preparamos un objeto limpio solo con lo editable
     const payload = {
       titulo: formCurso.value.titulo,
       descripcion: formCurso.value.descripcion
     };
 
     if (cursoEdicion.value) {
-      // Editar (PUT)
+      // Editar (PUT) - Enviamos el payload limpio
       await api.put(`/api/cursos/${cursoEdicion.value.id}`, payload);
     } else {
       // Crear (POST)
       await api.post('/api/cursos', payload);
     }
+    
+    // 2. Recargar y cerrar
     await cargarCursos();
     cerrarModalCurso();
   } catch (e) {
     console.error(e);
-    alert("Error al guardar curso");
+    alert("Error al guardar curso. Revisa la consola para más detalles.");
   }
 };
 
