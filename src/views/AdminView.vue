@@ -48,7 +48,13 @@
       </div>
 
       <div v-if="currentTab === 'usuarios'">
-        <h2 class="text-xl font-semibold mb-4">Usuarios Registrados</h2>
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold">Usuarios Registrados</h2>
+          <button @click="abrirModalUsuario()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">
+            + Nuevo Usuario
+          </button>
+        </div>
+
         <div class="bg-white rounded-lg shadow overflow-hidden">
           <table class="min-w-full divide-y divide-slate-200">
             <thead class="bg-slate-100">
@@ -67,15 +73,50 @@
                 <td class="px-6 py-4 text-sm text-slate-500">{{ user.email }}</td>
                 <td class="px-6 py-4 text-sm">
                   <span class="px-2 py-1 text-xs rounded-full bg-slate-100 border border-slate-300">
-                    {{ user.rol?.nombre || 'ESTUDIANTE' }}
+                    {{ user.rol?.nombre || 'N/A' }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-right">
+                <td class="px-6 py-4 text-right space-x-2">
+                  <button @click="abrirModalUsuario(user)" class="text-indigo-600 hover:text-indigo-900 text-sm">Editar</button>
                   <button @click="eliminarUsuario(user.id)" class="text-red-600 hover:text-red-900 text-sm">Eliminar</button>
                 </td>
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div v-if="mostrarModalUsuario" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+          <h3 class="text-xl font-bold mb-4">{{ usuarioEdicion ? 'Editar Usuario' : 'Nuevo Usuario' }}</h3>
+          <form @submit.prevent="guardarUsuario" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">Nombre</label>
+              <input v-model="formUsuario.nombre" required type="text" class="w-full border p-2 rounded" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Email</label>
+              <input v-model="formUsuario.email" required type="email" class="w-full border p-2 rounded" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">
+                Contraseña
+                <span v-if="usuarioEdicion" class="text-xs font-normal text-gray-500">(Dejar en blanco para no cambiar)</span>
+              </label>
+              <input v-model="formUsuario.password" :required="!usuarioEdicion" type="password" class="w-full border p-2 rounded" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Rol</label>
+              <select v-model="formUsuario.rolId" required class="w-full border p-2 rounded bg-white">
+                <option :value="1">ADMIN</option>
+                <option :value="2">ESTUDIANTE</option>
+              </select>
+            </div>
+            <div class="flex justify-end gap-2 mt-6">
+              <button type="button" @click="cerrarModalUsuario" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded">Cancelar</button>
+              <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
+            </div>
+          </form>
         </div>
       </div>
 
@@ -197,20 +238,74 @@ const eliminarCurso = async (id) => {
 
 // --- LÓGICA CRUD USUARIOS ---
 const usuarios = ref([]);
+// Nuevas variables reactivas
+const mostrarModalUsuario = ref(false);
+const usuarioEdicion = ref(null);
+const formUsuario = ref({ nombre: '', email: '', password: '', rolId: 2 });
 
 const cargarUsuarios = async () => {
   try {
     const { data } = await api.get('/api/admin/usuarios');
     usuarios.value = data;
   } catch (e) {
-    console.error("Falta implementar el endpoint de usuarios en backend");
+    console.error("Error cargando usuarios");
+  }
+};
+
+const abrirModalUsuario = (user = null) => {
+  usuarioEdicion.value = user;
+  if (user) {
+    // Modo Edición: Cargar datos existentes
+    formUsuario.value = { 
+      nombre: user.nombre, 
+      email: user.email, 
+      password: '', // La contraseña no se muestra por seguridad
+      rolId: user.rol ? user.rol.id : 2 
+    };
+  } else {
+    // Modo Creación: Limpiar formulario
+    formUsuario.value = { nombre: '', email: '', password: '', rolId: 2 };
+  }
+  mostrarModalUsuario.value = true;
+};
+
+const cerrarModalUsuario = () => {
+  mostrarModalUsuario.value = false;
+  usuarioEdicion.value = null;
+};
+
+const guardarUsuario = async () => {
+  try {
+    // Preparamos el objeto a enviar. El backend espera un objeto Rol con id.
+    const payload = {
+      nombre: formUsuario.value.nombre,
+      email: formUsuario.value.email,
+      password: formUsuario.value.password,
+      rol: { id: formUsuario.value.rolId }
+    };
+
+    if (usuarioEdicion.value) {
+      // Actualizar (PUT)
+      await api.put(`/api/admin/usuarios/${usuarioEdicion.value.id}`, payload);
+    } else {
+      // Crear (POST)
+      await api.post('/api/admin/usuarios', payload);
+    }
+    await cargarUsuarios();
+    cerrarModalUsuario();
+  } catch (e) {
+    alert("Error al guardar usuario: " + (e.response?.data || e.message));
   }
 };
 
 const eliminarUsuario = async (id) => {
   if(!confirm("¿Eliminar usuario?")) return;
-  await api.delete(`/api/admin/usuarios/${id}`);
-  cargarUsuarios();
+  try {
+      await api.delete(`/api/admin/usuarios/${id}`);
+      cargarUsuarios();
+  } catch(e) {
+      alert("Error eliminando usuario");
+  }
 };
 
 // --- LÓGICA CRUD MÓDULOS ---
