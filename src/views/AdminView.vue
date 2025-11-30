@@ -101,7 +101,7 @@
             <div>
               <label class="block text-sm font-medium mb-1">
                 Contraseña
-                <span v-if="usuarioEdicion" class="text-xs font-normal text-gray-500">(Dejar en blanco para no cambiar)</span>
+                <span v-if="usuarioEdicion" class="text-xs font-normal text-gray-500">(Dejar vacío para no cambiar)</span>
               </label>
               <input v-model="formUsuario.password" :required="!usuarioEdicion" type="password" class="w-full border p-2 rounded" />
             </div>
@@ -185,7 +185,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import api from '../api/client';
 
 // Estado General
@@ -195,7 +195,7 @@ const tabs = [{ id: 'cursos', name: 'Gestionar Cursos' }, { id: 'usuarios', name
 // --- LÓGICA CRUD CURSOS ---
 const cursos = ref([]);
 const mostrarModalCurso = ref(false);
-const cursoEdicion = ref(null); // Si es null, es creación
+const cursoEdicion = ref(null);
 const formCurso = ref({ titulo: '', descripcion: '' });
 
 const cargarCursos = async () => {
@@ -217,10 +217,8 @@ const cerrarModalCurso = () => {
 const guardarCurso = async () => {
   try {
     if (cursoEdicion.value) {
-      // Editar (PUT)
       await api.put(`/api/cursos/${cursoEdicion.value.id}`, formCurso.value);
     } else {
-      // Crear (POST)
       await api.post('/api/cursos', formCurso.value);
     }
     await cargarCursos();
@@ -236,9 +234,8 @@ const eliminarCurso = async (id) => {
   cargarCursos();
 };
 
-// --- LÓGICA CRUD USUARIOS ---
+// --- LÓGICA CRUD USUARIOS (NUEVO) ---
 const usuarios = ref([]);
-// Nuevas variables reactivas
 const mostrarModalUsuario = ref(false);
 const usuarioEdicion = ref(null);
 const formUsuario = ref({ nombre: '', email: '', password: '', rolId: 2 });
@@ -255,15 +252,15 @@ const cargarUsuarios = async () => {
 const abrirModalUsuario = (user = null) => {
   usuarioEdicion.value = user;
   if (user) {
-    // Modo Edición: Cargar datos existentes
+    // Editar
     formUsuario.value = { 
       nombre: user.nombre, 
       email: user.email, 
-      password: '', // La contraseña no se muestra por seguridad
+      password: '', // Password vacía al editar
       rolId: user.rol ? user.rol.id : 2 
     };
   } else {
-    // Modo Creación: Limpiar formulario
+    // Crear
     formUsuario.value = { nombre: '', email: '', password: '', rolId: 2 };
   }
   mostrarModalUsuario.value = true;
@@ -276,7 +273,6 @@ const cerrarModalUsuario = () => {
 
 const guardarUsuario = async () => {
   try {
-    // Preparamos el objeto a enviar. El backend espera un objeto Rol con id.
     const payload = {
       nombre: formUsuario.value.nombre,
       email: formUsuario.value.email,
@@ -285,10 +281,10 @@ const guardarUsuario = async () => {
     };
 
     if (usuarioEdicion.value) {
-      // Actualizar (PUT)
+      // PUT
       await api.put(`/api/admin/usuarios/${usuarioEdicion.value.id}`, payload);
     } else {
-      // Crear (POST)
+      // POST
       await api.post('/api/admin/usuarios', payload);
     }
     await cargarUsuarios();
@@ -300,12 +296,8 @@ const guardarUsuario = async () => {
 
 const eliminarUsuario = async (id) => {
   if(!confirm("¿Eliminar usuario?")) return;
-  try {
-      await api.delete(`/api/admin/usuarios/${id}`);
-      cargarUsuarios();
-  } catch(e) {
-      alert("Error eliminando usuario");
-  }
+  await api.delete(`/api/admin/usuarios/${id}`);
+  cargarUsuarios();
 };
 
 // --- LÓGICA CRUD MÓDULOS ---
@@ -328,10 +320,8 @@ const guardarModulo = async () => {
   const cursoId = cursoSeleccionadoModulos.value.id;
   try {
     if (editandoModulo.value) {
-      // Editar Módulo
       await api.put(`/api/modulos/${editandoModulo.value.id}`, formModulo.value);
     } else {
-      // Crear Módulo
       await api.post(`/api/cursos/${cursoId}/modulos`, formModulo.value);
     }
     await cargarModulos(cursoId);
