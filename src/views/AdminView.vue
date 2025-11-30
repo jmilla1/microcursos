@@ -216,14 +216,23 @@ const cerrarModalCurso = () => {
 
 const guardarCurso = async () => {
   try {
+    // Creamos un objeto limpio solo con lo necesario
+    const payload = {
+      titulo: formCurso.value.titulo,
+      descripcion: formCurso.value.descripcion
+    };
+
     if (cursoEdicion.value) {
-      await api.put(`/api/cursos/${cursoEdicion.value.id}`, formCurso.value);
+      // Editar (PUT)
+      await api.put(`/api/cursos/${cursoEdicion.value.id}`, payload);
     } else {
-      await api.post('/api/cursos', formCurso.value);
+      // Crear (POST)
+      await api.post('/api/cursos', payload);
     }
     await cargarCursos();
     cerrarModalCurso();
   } catch (e) {
+    console.error(e);
     alert("Error al guardar curso");
   }
 };
