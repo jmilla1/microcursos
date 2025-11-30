@@ -1,347 +1,270 @@
 <template>
-  <div class="py-8">
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <h1 class="text-2xl font-semibold mb-1">Administración de cursos</h1>
-        <p class="text-sm text-slate-600 max-w-2xl">
-          Desde este panel el usuario <span class="font-semibold">ADMIN</span>
-          puede crear nuevos microcursos y revisar el catálogo existente.
-          Es una administración sencilla, pensada para el alcance del proyecto de título.
-        </p>
+  <div class="py-8 bg-slate-50 min-h-screen">
+    <div class="max-w-6xl mx-auto px-4">
+      <h1 class="text-3xl font-bold text-slate-900 mb-6">Panel de Administración</h1>
+
+      <div class="flex space-x-4 border-b border-slate-300 mb-6">
+        <button 
+          v-for="tab in tabs" 
+          :key="tab.id"
+          @click="currentTab = tab.id"
+          class="py-2 px-4 font-medium transition-colors border-b-2"
+          :class="currentTab === tab.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'"
+        >
+          {{ tab.name }}
+        </button>
       </div>
 
-      <span class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-emerald-100 text-emerald-700">
-        Rol requerido: ADMIN
-      </span>
-    </div>
+      <div v-if="currentTab === 'cursos'">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold">Cursos Disponibles</h2>
+          <button @click="abrirModalCurso()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">
+            + Nuevo Curso
+          </button>
+        </div>
 
-    <div class="grid gap-6 lg:grid-cols-3">
-      <!-- Columna izquierda: catálogo -->
-      <section class="lg:col-span-2">
-        <div class="bg-white border rounded-lg shadow-sm overflow-hidden">
-          <div class="flex items-center justify-between px-4 py-2 bg-slate-50 border-b">
-            <h2 class="text-sm font-semibold text-slate-700">
-              Catálogo actual de cursos
-            </h2>
-            <button
-              type="button"
-              @click="cargarCursos"
-              class="text-xs text-blue-600 hover:underline disabled:opacity-60"
-              :disabled="loadingCursos"
-            >
-              {{ loadingCursos ? "Actualizando..." : "Actualizar" }}
-            </button>
-          </div>
-
-          <div v-if="errorCursos" class="px-4 py-2 text-sm text-red-600">
-            {{ errorCursos }}
-          </div>
-
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50 border-b text-xs text-slate-500">
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+          <table class="min-w-full divide-y divide-slate-200">
+            <thead class="bg-slate-100">
               <tr>
-                <th class="text-left px-4 py-2">Título</th>
-                <th class="text-left px-4 py-2">Descripción</th>
-                <th class="text-center px-4 py-2">Módulos</th>
-                <th class="text-center px-4 py-2">Fecha creación</th>
-                <th class="text-center px-4 py-2">Acciones</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">ID</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Título</th>
+                <th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase">Acciones</th>
               </tr>
             </thead>
-            <tbody>
-              <tr
-                v-for="curso in cursos"
-                :key="curso.id"
-                class="border-b last:border-b-0 hover:bg-slate-50 transition-colors"
-              >
-                <td class="px-4 py-3 align-top">
-                  <div class="font-semibold text-slate-900">
-                    {{ curso.titulo }}
-                  </div>
-                  <div class="text-[11px] text-slate-500">
-                    ID: {{ curso.id }}
-                  </div>
-                </td>
-                <td class="px-4 py-3 align-top text-xs text-slate-700">
-                  <span class="line-clamp-2">
-                    {{ curso.descripcion }}
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-center align-top text-xs">
-                  <span
-                    class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-800 font-semibold"
-                  >
-                    {{ curso.modulos?.length || 0 }}
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-center align-top text-xs text-slate-600 whitespace-nowrap">
-                  {{ formatearFecha(curso.fechaCreacion) }}
-                </td>
-                <td class="px-4 py-3 text-center align-top text-xs">
-                  <button
-                    type="button"
-                    class="px-2 py-1 rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 disabled:opacity-60"
-                    @click="confirmarEliminar(curso)"
-                    :disabled="eliminandoId === curso.id"
-                  >
-                    {{ eliminandoId === curso.id ? "Eliminando..." : "Eliminar" }}
-                  </button>
-                </td>
-              </tr>
-
-              <tr v-if="!cursos.length && !loadingCursos">
-                <td colspan="5" class="px-4 py-4 text-center text-sm text-slate-500">
-                  No hay cursos registrados aún.
+            <tbody class="divide-y divide-slate-200">
+              <tr v-for="curso in cursos" :key="curso.id">
+                <td class="px-6 py-4 text-sm text-slate-500">{{ curso.id }}</td>
+                <td class="px-6 py-4 text-sm font-medium text-slate-900">{{ curso.titulo }}</td>
+                <td class="px-6 py-4 text-right space-x-2">
+                  <button @click="abrirModalCurso(curso)" class="text-indigo-600 hover:text-indigo-900 text-sm">Editar</button>
+                  <button @click="gestionarModulos(curso)" class="text-emerald-600 hover:text-emerald-900 text-sm font-bold">Módulos</button>
+                  <button @click="eliminarCurso(curso.id)" class="text-red-600 hover:text-red-900 text-sm">Eliminar</button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+      </div>
 
-        <p
-          v-if="mensajeEliminacion"
-          class="mt-2 text-xs"
-          :class="mensajeEliminacionTipo === 'error' ? 'text-red-600' : 'text-emerald-700'"
-        >
-          {{ mensajeEliminacion }}
-        </p>
-      </section>
+      <div v-if="currentTab === 'usuarios'">
+        <h2 class="text-xl font-semibold mb-4">Usuarios Registrados</h2>
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+          <table class="min-w-full divide-y divide-slate-200">
+            <thead class="bg-slate-100">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">ID</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Nombre</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Email</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Rol</th>
+                <th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              <tr v-for="user in usuarios" :key="user.id">
+                <td class="px-6 py-4 text-sm text-slate-500">{{ user.id }}</td>
+                <td class="px-6 py-4 text-sm text-slate-900">{{ user.nombre }}</td>
+                <td class="px-6 py-4 text-sm text-slate-500">{{ user.email }}</td>
+                <td class="px-6 py-4 text-sm">
+                  <span class="px-2 py-1 text-xs rounded-full bg-slate-100 border border-slate-300">
+                    {{ user.rol?.nombre || 'ESTUDIANTE' }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <button @click="eliminarUsuario(user.id)" class="text-red-600 hover:text-red-900 text-sm">Eliminar</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      <!-- Columna derecha: crear curso -->
-      <aside>
-        <div class="bg-white border rounded-lg shadow-sm p-4">
-          <h2 class="text-sm font-semibold mb-2">Crear nuevo curso</h2>
-          <p class="text-xs text-slate-600 mb-3">
-            Este formulario crea un curso junto con una lista básica de módulos.
-          </p>
+      <div v-if="cursoSeleccionadoModulos" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-auto p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold">Módulos: {{ cursoSeleccionadoModulos.titulo }}</h3>
+            <button @click="cursoSeleccionadoModulos = null" class="text-slate-400 hover:text-slate-600">✕</button>
+          </div>
 
-          <form @submit.prevent="crearCurso" class="space-y-3">
-            <div>
-              <label class="block text-xs mb-1">Título del curso *</label>
-              <input
-                v-model="nuevoCurso.titulo"
-                type="text"
-                class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ej: Introducción a Microcursos"
-                required
-              />
-            </div>
-
-            <div>
-              <label class="block text-xs mb-1">Descripción</label>
-              <textarea
-                v-model="nuevoCurso.descripcion"
-                rows="3"
-                class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Breve descripción del objetivo del curso."
-              ></textarea>
-            </div>
-
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="text-xs">Módulos del curso</label>
-                <button
-                  type="button"
-                  class="text-[11px] text-blue-600 hover:underline"
-                  @click="agregarModulo"
-                >
-                  + Agregar módulo
+          <form @submit.prevent="guardarModulo" class="bg-slate-50 p-4 rounded mb-6 border">
+            <h4 class="text-sm font-bold mb-3 uppercase text-slate-500">
+              {{ editandoModulo ? 'Editar Módulo' : 'Nuevo Módulo' }}
+            </h4>
+            <div class="grid gap-3">
+              <input v-model="formModulo.titulo" placeholder="Título del Módulo" required class="border p-2 rounded text-sm w-full" />
+              <textarea v-model="formModulo.descripcion" placeholder="Descripción breve" rows="2" class="border p-2 rounded text-sm w-full"></textarea>
+              <div class="flex gap-3">
+                <input v-model.number="formModulo.orden" type="number" placeholder="Orden" required class="border p-2 rounded text-sm w-24" />
+                <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-emerald-700 flex-1">
+                  {{ editandoModulo ? 'Actualizar' : 'Agregar' }}
                 </button>
-              </div>
-
-              <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
-                <div
-                  v-for="(modulo, index) in nuevoCurso.modulos"
-                  :key="index"
-                  class="border rounded px-2 py-2 bg-slate-50"
-                >
-                  <div class="flex items-center justify-between mb-1">
-                    <span class="text-[11px] font-semibold text-slate-700">
-                      Módulo {{ index + 1 }}
-                    </span>
-                    <button
-                      type="button"
-                      class="text-[10px] text-red-500 hover:underline"
-                      v-if="nuevoCurso.modulos.length > 1"
-                      @click="eliminarModulo(index)"
-                    >
-                      Quitar
-                    </button>
-                  </div>
-
-                  <input
-                    v-model="modulo.titulo"
-                    type="text"
-                    class="w-full border rounded px-2 py-1 text-xs mb-1"
-                    placeholder="Título del módulo"
-                  />
-                  <textarea
-                    v-model="modulo.descripcion"
-                    rows="2"
-                    class="w-full border rounded px-2 py-1 text-xs"
-                    placeholder="Descripción breve del módulo (opcional)"
-                  ></textarea>
-                </div>
+                <button v-if="editandoModulo" @click="resetFormModulo" type="button" class="text-slate-500 text-sm underline">Cancelar</button>
               </div>
             </div>
+          </form>
 
-            <button
-              type="submit"
-              class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded text-sm font-medium disabled:opacity-60"
-              :disabled="creandoCurso"
-            >
-              {{ creandoCurso ? "Creando curso..." : "Crear curso" }}
-            </button>
+          <ul class="space-y-2">
+            <li v-for="mod in modulosDelCurso" :key="mod.id" class="border p-3 rounded flex justify-between items-center bg-white">
+              <div>
+                <span class="font-bold text-slate-700 mr-2">{{ mod.orden }}.</span>
+                <span class="font-medium">{{ mod.titulo }}</span>
+              </div>
+              <div class="space-x-3 text-sm">
+                <button @click="prepararEditarModulo(mod)" class="text-blue-600 hover:underline">Editar</button>
+                <button @click="eliminarModulo(mod.id)" class="text-red-600 hover:underline">Borrar</button>
+              </div>
+            </li>
+            <li v-if="modulosDelCurso.length === 0" class="text-center text-slate-500 py-4 italic">No hay módulos aún.</li>
+          </ul>
+        </div>
+      </div>
 
-            <p v-if="errorCrear" class="text-xs text-red-600">
-              {{ errorCrear }}
-            </p>
-            <p v-if="mensajeCrear" class="text-xs text-emerald-700">
-              {{ mensajeCrear }}
-            </p>
+      <div v-if="mostrarModalCurso" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+          <h3 class="text-xl font-bold mb-4">{{ cursoEdicion ? 'Editar Curso' : 'Nuevo Curso' }}</h3>
+          <form @submit.prevent="guardarCurso" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">Título</label>
+              <input v-model="formCurso.titulo" required class="w-full border p-2 rounded" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Descripción</label>
+              <textarea v-model="formCurso.descripcion" rows="3" required class="w-full border p-2 rounded"></textarea>
+            </div>
+            <div class="flex justify-end gap-2 mt-6">
+              <button type="button" @click="cerrarModalCurso" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded">Cancelar</button>
+              <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
+            </div>
           </form>
         </div>
+      </div>
 
-        <p class="mt-2 text-[11px] text-slate-500">
-          Nota: el backend valida que solo usuarios con rol <strong>ADMIN</strong>
-          puedan crear o eliminar cursos.
-        </p>
-      </aside>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import api from "../api/client";
+import { ref, onMounted, computed } from 'vue';
+import api from '../api/client';
 
+// Estado General
+const currentTab = ref('cursos');
+const tabs = [{ id: 'cursos', name: 'Gestionar Cursos' }, { id: 'usuarios', name: 'Gestionar Usuarios' }];
+
+// --- LÓGICA CRUD CURSOS ---
 const cursos = ref([]);
-const loadingCursos = ref(false);
-const errorCursos = ref("");
+const mostrarModalCurso = ref(false);
+const cursoEdicion = ref(null); // Si es null, es creación
+const formCurso = ref({ titulo: '', descripcion: '' });
 
-const eliminandoId = ref(null);
-const mensajeEliminacion = ref("");
-const mensajeEliminacionTipo = ref("ok"); // "ok" | "error"
-
-const nuevoCurso = ref({
-  titulo: "",
-  descripcion: "",
-  modulos: [
-    { titulo: "", descripcion: "" },
-  ],
-});
-
-const creandoCurso = ref(false);
-const errorCrear = ref("");
-const mensajeCrear = ref("");
-
-// --- Cargar cursos ---
 const cargarCursos = async () => {
-  loadingCursos.value = true;
-  errorCursos.value = "";
-  try {
-    const { data } = await api.get("/api/cursos");
-    cursos.value = data;
-  } catch (e) {
-    console.error(e);
-    errorCursos.value = "No se pudo cargar el catálogo de cursos.";
-  } finally {
-    loadingCursos.value = false;
-  }
+  const { data } = await api.get('/api/cursos');
+  cursos.value = data;
 };
 
-onMounted(cargarCursos);
+const abrirModalCurso = (curso = null) => {
+  cursoEdicion.value = curso;
+  formCurso.value = curso ? { ...curso } : { titulo: '', descripcion: '' };
+  mostrarModalCurso.value = true;
+};
 
-// --- Crear curso ---
-const crearCurso = async () => {
-  errorCrear.value = "";
-  mensajeCrear.value = "";
-  creandoCurso.value = true;
+const cerrarModalCurso = () => {
+  mostrarModalCurso.value = false;
+  cursoEdicion.value = null;
+};
 
+const guardarCurso = async () => {
   try {
-    const payload = {
-      titulo: nuevoCurso.value.titulo,
-      descripcion: nuevoCurso.value.descripcion,
-      modulos: nuevoCurso.value.modulos
-        .filter((m) => m.titulo && m.titulo.trim().length > 0)
-        .map((m, index) => ({
-          titulo: m.titulo,
-          descripcion: m.descripcion,
-          orden: index + 1,
-        })),
-    };
-
-    const { data } = await api.post("/api/cursos", payload);
-    cursos.value.push(data);
-
-    nuevoCurso.value = {
-      titulo: "",
-      descripcion: "",
-      modulos: [{ titulo: "", descripcion: "" }],
-    };
-
-    mensajeCrear.value = "Curso creado correctamente.";
-  } catch (e) {
-    console.error(e);
-    if (e.response && e.response.status === 403) {
-      errorCrear.value = "No tienes permiso para crear cursos (se requiere rol ADMIN).";
+    if (cursoEdicion.value) {
+      // Editar (PUT)
+      await api.put(`/api/cursos/${cursoEdicion.value.id}`, formCurso.value);
     } else {
-      errorCrear.value = "No se pudo crear el curso. Revisa los datos.";
+      // Crear (POST)
+      await api.post('/api/cursos', formCurso.value);
     }
-  } finally {
-    creandoCurso.value = false;
+    await cargarCursos();
+    cerrarModalCurso();
+  } catch (e) {
+    alert("Error al guardar curso");
   }
-};
-
-
-const agregarModulo = () => {
-  nuevoCurso.value.modulos.push({ titulo: "", descripcion: "" });
-};
-
-const eliminarModulo = (index) => {
-  nuevoCurso.value.modulos.splice(index, 1);
-};
-
-// --- Eliminar curso ---
-const confirmarEliminar = async (curso) => {
-  const ok = window.confirm(
-    `¿Seguro que quieres eliminar el curso "${curso.titulo}" (ID ${curso.id})?`
-  );
-  if (!ok) return;
-
-  await eliminarCurso(curso.id);
 };
 
 const eliminarCurso = async (id) => {
-  mensajeEliminacion.value = "";
-  mensajeEliminacionTipo.value = "ok";
-  eliminandoId.value = id;
+  if(!confirm("¿Seguro? Esto borrará el curso y sus módulos.")) return;
+  await api.delete(`/api/cursos/${id}`);
+  cargarCursos();
+};
 
+// --- LÓGICA CRUD USUARIOS ---
+const usuarios = ref([]);
+
+const cargarUsuarios = async () => {
   try {
-    await api.delete(`/api/cursos/${id}`);
-    cursos.value = cursos.value.filter((c) => c.id !== id);
-    mensajeEliminacion.value = "Curso eliminado correctamente.";
+    const { data } = await api.get('/api/admin/usuarios');
+    usuarios.value = data;
   } catch (e) {
-    console.error(e);
-
-    // Si el backend lanzó IllegalStateException, normalmente será 400 o 409
-    if (e.response && (e.response.status === 400 || e.response.status === 409)) {
-      mensajeEliminacion.value =
-        e.response.data?.message ||
-        "No se puede eliminar un curso que tiene inscripciones asociadas.";
-    } else {
-      mensajeEliminacion.value = "Error al eliminar el curso.";
-    }
-    mensajeEliminacionTipo.value = "error";
-  } finally {
-    eliminandoId.value = null;
+    console.error("Falta implementar el endpoint de usuarios en backend");
   }
 };
 
-// --- Helpers ---
-const formatearFecha = (iso) => {
-  if (!iso) return "-";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString();
+const eliminarUsuario = async (id) => {
+  if(!confirm("¿Eliminar usuario?")) return;
+  await api.delete(`/api/admin/usuarios/${id}`);
+  cargarUsuarios();
 };
+
+// --- LÓGICA CRUD MÓDULOS ---
+const cursoSeleccionadoModulos = ref(null);
+const modulosDelCurso = ref([]);
+const editandoModulo = ref(null);
+const formModulo = ref({ titulo: '', descripcion: '', orden: 1 });
+
+const gestionarModulos = async (curso) => {
+  cursoSeleccionadoModulos.value = curso;
+  cargarModulos(curso.id);
+};
+
+const cargarModulos = async (cursoId) => {
+  const { data } = await api.get(`/api/cursos/${cursoId}/modulos`);
+  modulosDelCurso.value = data.sort((a,b) => a.orden - b.orden);
+};
+
+const guardarModulo = async () => {
+  const cursoId = cursoSeleccionadoModulos.value.id;
+  try {
+    if (editandoModulo.value) {
+      // Editar Módulo
+      await api.put(`/api/modulos/${editandoModulo.value.id}`, formModulo.value);
+    } else {
+      // Crear Módulo
+      await api.post(`/api/cursos/${cursoId}/modulos`, formModulo.value);
+    }
+    await cargarModulos(cursoId);
+    resetFormModulo();
+  } catch (e) {
+    alert("Error guardando módulo");
+  }
+};
+
+const eliminarModulo = async (id) => {
+  if(!confirm("¿Borrar módulo?")) return;
+  await api.delete(`/api/modulos/${id}`);
+  cargarModulos(cursoSeleccionadoModulos.value.id);
+};
+
+const prepararEditarModulo = (modulo) => {
+  editandoModulo.value = modulo;
+  formModulo.value = { ...modulo };
+};
+
+const resetFormModulo = () => {
+  editandoModulo.value = null;
+  formModulo.value = { titulo: '', descripcion: '', orden: modulosDelCurso.value.length + 1 };
+};
+
+// Inicialización
+onMounted(() => {
+  cargarCursos();
+  cargarUsuarios();
+});
 </script>
